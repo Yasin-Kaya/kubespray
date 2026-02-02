@@ -1,0 +1,159 @@
+---
+# ========================
+# RANCHER KALDIRMA (rancher_enabled: false)
+# ========================
+- name: Rancher | Remove ArgoCD Application finalizers
+  command: "{{ bin_dir }}/kubectl patch application rancher -n {{ rancher_argocd_namespace }} --type merge -p '{\"metadata\":{\"finalizers\":null}}'"
+  become: true
+  when:
+    - not rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Rancher | Remove ArgoCD Application
+  command: "{{ bin_dir }}/kubectl delete application rancher -n {{ rancher_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Rancher | Remove ArgoCD AppProject
+  command: "{{ bin_dir }}/kubectl delete appproject {{ rancher_argocd_project }} -n {{ rancher_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Rancher | Remove Rancher CRDs
+  shell: "{{ bin_dir }}/kubectl get crd -o name | grep -E 'cattle\\.io|management\\.cattle\\.io|project\\.cattle\\.io|catalog\\.cattle\\.io|fleet\\.cattle\\.io|provisioning\\.cattle\\.io|rke\\.cattle\\.io|cluster\\.x-k8s\\.io' | xargs -r {{ bin_dir }}/kubectl delete --ignore-not-found"
+  become: true
+  when:
+    - not rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Rancher | Remove Rancher ClusterRoles and ClusterRoleBindings
+  shell: "{{ bin_dir }}/kubectl delete clusterrole,clusterrolebinding -l release=rancher --ignore-not-found"
+  become: true
+  when:
+    - not rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Rancher | Remove Rancher namespaces
+  command: "{{ bin_dir }}/kubectl delete namespace {{ item }} --ignore-not-found"
+  become: true
+  loop:
+    - "{{ rancher_namespace }}"
+    - cattle-capi-system
+    - cattle-fleet-clusters-system
+    - cattle-fleet-local-system
+    - cattle-fleet-system
+    - cattle-global-data
+    - cattle-impersonation-system
+    - cattle-local-user-passwords
+    - cattle-turtles-system
+    - cattle-ui-plugin-system
+    - fleet-default
+    - fleet-local
+    - local
+  when:
+    - not rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Rancher | Remove fleet namespaces
+  shell: "{{ bin_dir }}/kubectl get ns -o name | grep -E 'cluster-fleet-|^namespace/p-' | xargs -r {{ bin_dir }}/kubectl delete --ignore-not-found"
+  become: true
+  when:
+    - not rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Rancher | Force remove stuck namespaces
+  shell: |
+    for ns in $({{ bin_dir }}/kubectl get ns -o jsonpath='{range .items[?(@.status.phase=="Terminating")]}{.metadata.name}{"\n"}{end}' | grep -E 'cattle-|cluster-fleet-|fleet-|^p-|^local$'); do
+      {{ bin_dir }}/kubectl get namespace $ns -o json | python3 -c "import sys,json; d=json.load(sys.stdin); d['spec']['finalizers']=[]; print(json.dumps(d))" | {{ bin_dir }}/kubectl replace --raw "/api/v1/namespaces/$ns/finalize" -f -
+    done
+  become: true
+  when:
+    - not rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+# ========================
+# RANCHER KURULUM - ArgoCD Application
+# ========================
+- name: Rancher | Create namespace
+  become: true
+  template:
+    src: "rancher-namespace.yml.j2"
+    dest: "{{ kube_config_dir }}/rancher-namespace.yml"
+    mode: "0644"
+  when:
+    - rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Rancher | Apply namespace
+  become: true
+  kube:
+    name: Rancher
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/rancher-namespace.yml"
+    state: latest
+  when:
+    - rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Rancher | Create ArgoCD AppProject
+  become: true
+  template:
+    src: "rancher-argocd-project.yml.j2"
+    dest: "{{ kube_config_dir }}/rancher-argocd-project.yml"
+    mode: "0644"
+  when:
+    - rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Rancher | Apply ArgoCD AppProject
+  become: true
+  kube:
+    name: Rancher AppProject
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/rancher-argocd-project.yml"
+    state: latest
+  when:
+    - rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Rancher | Create ArgoCD Application
+  become: true
+  template:
+    src: "rancher-argocd-app.yml.j2"
+    dest: "{{ kube_config_dir }}/rancher-argocd-app.yml"
+    mode: "0644"
+  when:
+    - rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Rancher | Apply ArgoCD Application
+  become: true
+  kube:
+    name: Rancher Application
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/rancher-argocd-app.yml"
+    state: latest
+  when:
+    - rancher_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Rancher | Wait for ArgoCD to sync Rancher
+  command: "{{ bin_dir }}/kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application rancher -n {{ rancher_argocd_namespace }} --timeout=10m"
+  become: true
+  when:
+    - rancher_enabled
+    - rancher_argocd_sync_policy == 'automated'
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true

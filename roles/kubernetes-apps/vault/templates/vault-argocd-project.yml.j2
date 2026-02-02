@@ -1,0 +1,18 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ vault_argocd_project }}
+  namespace: {{ vault_argocd_namespace }}
+spec:
+  description: "HashiCorp Vault Project"
+  sourceRepos:
+    - "{{ vault_helm_repo_url }}"
+  destinations:
+    - namespace: {{ vault_namespace }}
+      server: https://kubernetes.default.svc
+    - namespace: {{ vault_argocd_namespace }}
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

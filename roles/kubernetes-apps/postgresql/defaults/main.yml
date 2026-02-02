@@ -1,0 +1,26 @@
+---
+postgresql_enabled: false
+postgresql_namespace: postgresql
+postgresql_version: "18.2.3"
+postgresql_helm_repo_name: bitnami
+postgresql_helm_repo_url: "registry-1.docker.io/bitnamicharts"
+postgresql_helm_release_name: postgresql
+
+# Auth
+postgresql_username: "postgres"
+postgresql_password: "postgres"
+postgresql_database: "appdb"
+
+# PVC
+postgresql_pvc_enabled: true
+postgresql_pvc_size: "8Gi"
+postgresql_pvc_storage_class: ""
+
+# Service type: ClusterIP, NodePort, LoadBalancer
+postgresql_service_type: "ClusterIP"
+# postgresql_nodeport: 30432
+
+# ArgoCD
+postgresql_argocd_namespace: "argocd"
+postgresql_argocd_project: "postgresql"
+postgresql_argocd_sync_policy: "automated"

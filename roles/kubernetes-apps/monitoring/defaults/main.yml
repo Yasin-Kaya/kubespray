@@ -1,0 +1,57 @@
+---
+monitoring_enabled: false
+monitoring_namespace: monitoring
+monitoring_version: "67.9.0"
+monitoring_helm_repo_name: prometheus-community
+monitoring_helm_repo_url: "https://prometheus-community.github.io/helm-charts"
+monitoring_helm_release_name: kube-prometheus-stack
+
+# Grafana
+monitoring_grafana_enabled: true
+monitoring_grafana_admin_user: "admin"
+monitoring_grafana_admin_password: "admin"
+monitoring_grafana_service_type: "ClusterIP"
+monitoring_grafana_nodeport: 30300
+monitoring_grafana_pvc_enabled: true
+monitoring_grafana_pvc_size: "5Gi"
+monitoring_grafana_pvc_storage_class: ""
+# Grafana Ingress
+monitoring_grafana_ingress_enabled: false
+monitoring_grafana_ingress_host: "grafana.local"
+monitoring_grafana_ingress_class: "nginx"
+monitoring_grafana_ingress_tls_enabled: false
+monitoring_grafana_ingress_tls_secret: "grafana-tls"
+
+# Prometheus
+monitoring_prometheus_enabled: true
+monitoring_prometheus_retention: "15d"
+monitoring_prometheus_pvc_enabled: true
+monitoring_prometheus_pvc_size: "10Gi"
+monitoring_prometheus_pvc_storage_class: ""
+monitoring_prometheus_service_type: "ClusterIP"
+monitoring_prometheus_nodeport: 30090
+# Prometheus Ingress
+monitoring_prometheus_ingress_enabled: false
+monitoring_prometheus_ingress_host: "prometheus.local"
+monitoring_prometheus_ingress_class: "nginx"
+monitoring_prometheus_ingress_tls_enabled: false
+monitoring_prometheus_ingress_tls_secret: "prometheus-tls"
+
+# Alertmanager
+monitoring_alertmanager_enabled: true
+monitoring_alertmanager_pvc_enabled: true
+monitoring_alertmanager_pvc_size: "2Gi"
+monitoring_alertmanager_pvc_storage_class: ""
+monitoring_alertmanager_service_type: "ClusterIP"
+monitoring_alertmanager_nodeport: 30093
+
+# Node Exporter
+monitoring_node_exporter_enabled: true
+
+# Kube State Metrics
+monitoring_kube_state_metrics_enabled: true
+
+# ArgoCD
+monitoring_argocd_namespace: "argocd"
+monitoring_argocd_project: "monitoring"
+monitoring_argocd_sync_policy: "automated"

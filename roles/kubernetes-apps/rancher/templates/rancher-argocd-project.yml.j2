@@ -1,0 +1,18 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ rancher_argocd_project }}
+  namespace: {{ rancher_argocd_namespace }}
+spec:
+  description: "Rancher Server Project"
+  sourceRepos:
+    - "{{ rancher_helm_repo_url }}"
+  destinations:
+    - namespace: {{ rancher_namespace }}
+      server: https://kubernetes.default.svc
+    - namespace: {{ rancher_argocd_namespace }}
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

@@ -1,0 +1,33 @@
+---
+vault_enabled: false
+vault_namespace: vault
+vault_version: "0.29.1"
+vault_helm_repo_name: hashicorp
+vault_helm_repo_url: "https://helm.releases.hashicorp.com"
+vault_helm_release_name: vault
+
+# Server mode
+vault_server_dev_enabled: true
+vault_ui_enabled: true
+
+# PVC (Persistent Volume Claim) - dev mode'da kullanılmaz, standalone/ha mode'da gerekli
+vault_pvc_enabled: false
+vault_pvc_size: "10Gi"
+vault_pvc_storage_class: ""
+
+# Service type: ClusterIP, NodePort, LoadBalancer
+vault_service_type: "ClusterIP"
+vault_nodeport_server: 30820
+vault_nodeport_ui: 30821
+
+# Ingress
+vault_ingress_enabled: false
+vault_ingress_host: "vault.local"
+vault_ingress_class: "nginx"
+vault_ingress_tls_enabled: false
+vault_ingress_tls_secret: "vault-tls"
+
+# ArgoCD
+vault_argocd_namespace: "argocd"
+vault_argocd_project: "vault"
+vault_argocd_sync_policy: "automated"

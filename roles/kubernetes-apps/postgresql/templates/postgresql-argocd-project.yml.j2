@@ -1,0 +1,18 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ postgresql_argocd_project }}
+  namespace: {{ postgresql_argocd_namespace }}
+spec:
+  description: "PostgreSQL Project"
+  sourceRepos:
+    - '*'
+  destinations:
+    - namespace: {{ postgresql_namespace }}
+      server: https://kubernetes.default.svc
+    - namespace: {{ postgresql_argocd_namespace }}
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

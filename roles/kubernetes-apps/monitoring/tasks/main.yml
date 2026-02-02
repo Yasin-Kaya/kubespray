@@ -1,0 +1,102 @@
+---
+# ========================
+# MONITORING KALDIRMA (monitoring_enabled: false)
+# ========================
+- name: Monitoring | Remove ArgoCD Application
+  command: "{{ bin_dir }}/kubectl delete application kube-prometheus-stack -n {{ monitoring_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not monitoring_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Monitoring | Remove ArgoCD AppProject
+  command: "{{ bin_dir }}/kubectl delete appproject {{ monitoring_argocd_project }} -n {{ monitoring_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not monitoring_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Monitoring | Remove namespace
+  command: "{{ bin_dir }}/kubectl delete namespace {{ monitoring_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not monitoring_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+# ========================
+# MONITORING KURULUM - ArgoCD Application
+# ========================
+- name: Monitoring | Create namespace
+  become: true
+  template:
+    src: "monitoring-namespace.yml.j2"
+    dest: "{{ kube_config_dir }}/monitoring-namespace.yml"
+    mode: "0644"
+  when:
+    - monitoring_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Monitoring | Apply namespace
+  become: true
+  kube:
+    name: Monitoring
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/monitoring-namespace.yml"
+    state: latest
+  when:
+    - monitoring_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Monitoring | Create ArgoCD AppProject
+  become: true
+  template:
+    src: "monitoring-argocd-project.yml.j2"
+    dest: "{{ kube_config_dir }}/monitoring-argocd-project.yml"
+    mode: "0644"
+  when:
+    - monitoring_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Monitoring | Apply ArgoCD AppProject
+  become: true
+  kube:
+    name: Monitoring AppProject
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/monitoring-argocd-project.yml"
+    state: latest
+  when:
+    - monitoring_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Monitoring | Create ArgoCD Application
+  become: true
+  template:
+    src: "monitoring-argocd-app.yml.j2"
+    dest: "{{ kube_config_dir }}/monitoring-argocd-app.yml"
+    mode: "0644"
+  when:
+    - monitoring_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Monitoring | Apply ArgoCD Application
+  become: true
+  kube:
+    name: Monitoring Application
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/monitoring-argocd-app.yml"
+    state: latest
+  when:
+    - monitoring_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Monitoring | Wait for ArgoCD to sync Monitoring
+  command: "{{ bin_dir }}/kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application kube-prometheus-stack -n {{ monitoring_argocd_namespace }} --timeout=10m"
+  become: true
+  when:
+    - monitoring_enabled
+    - monitoring_argocd_sync_policy == 'automated'
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true

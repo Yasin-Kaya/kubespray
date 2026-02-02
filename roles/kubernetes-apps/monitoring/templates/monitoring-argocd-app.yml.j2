@@ -1,0 +1,137 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: {{ monitoring_argocd_namespace }}
+spec:
+  project: {{ monitoring_argocd_project }}
+  source:
+    repoURL: "{{ monitoring_helm_repo_url }}"
+    chart: kube-prometheus-stack
+    targetRevision: "{{ monitoring_version }}"
+    helm:
+      values: |
+        ## Grafana
+        grafana:
+          enabled: {{ monitoring_grafana_enabled | lower }}
+          adminUser: "{{ monitoring_grafana_admin_user }}"
+          adminPassword: "{{ monitoring_grafana_admin_password }}"
+          service:
+            type: "{{ monitoring_grafana_service_type }}"
+{% if monitoring_grafana_service_type == 'NodePort' %}
+            nodePort: {{ monitoring_grafana_nodeport }}
+{% endif %}
+          persistence:
+            enabled: {{ monitoring_grafana_pvc_enabled | lower }}
+            size: "{{ monitoring_grafana_pvc_size }}"
+{% if monitoring_grafana_pvc_storage_class %}
+            storageClassName: "{{ monitoring_grafana_pvc_storage_class }}"
+{% endif %}
+{% if monitoring_grafana_ingress_enabled %}
+          ingress:
+            enabled: true
+            ingressClassName: "{{ monitoring_grafana_ingress_class }}"
+            hosts:
+              - "{{ monitoring_grafana_ingress_host }}"
+{% if monitoring_grafana_ingress_tls_enabled %}
+            tls:
+              - secretName: "{{ monitoring_grafana_ingress_tls_secret }}"
+                hosts:
+                  - "{{ monitoring_grafana_ingress_host }}"
+{% endif %}
+{% endif %}
+
+        ## Prometheus
+        prometheus:
+          enabled: {{ monitoring_prometheus_enabled | lower }}
+          prometheusSpec:
+            retention: "{{ monitoring_prometheus_retention }}"
+            storageSpec:
+{% if monitoring_prometheus_pvc_enabled %}
+              volumeClaimTemplate:
+                spec:
+{% if monitoring_prometheus_pvc_storage_class %}
+                  storageClassName: "{{ monitoring_prometheus_pvc_storage_class }}"
+{% endif %}
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: "{{ monitoring_prometheus_pvc_size }}"
+{% else %}
+              {}
+{% endif %}
+          service:
+            type: "{{ monitoring_prometheus_service_type }}"
+{% if monitoring_prometheus_service_type == 'NodePort' %}
+            nodePort: {{ monitoring_prometheus_nodeport }}
+{% endif %}
+{% if monitoring_prometheus_ingress_enabled %}
+          ingress:
+            enabled: true
+            ingressClassName: "{{ monitoring_prometheus_ingress_class }}"
+            hosts:
+              - "{{ monitoring_prometheus_ingress_host }}"
+{% if monitoring_prometheus_ingress_tls_enabled %}
+            tls:
+              - secretName: "{{ monitoring_prometheus_ingress_tls_secret }}"
+                hosts:
+                  - "{{ monitoring_prometheus_ingress_host }}"
+{% endif %}
+{% endif %}
+
+        ## Alertmanager
+        alertmanager:
+          enabled: {{ monitoring_alertmanager_enabled | lower }}
+{% if monitoring_alertmanager_pvc_enabled %}
+          alertmanagerSpec:
+            storage:
+              volumeClaimTemplate:
+                spec:
+{% if monitoring_alertmanager_pvc_storage_class %}
+                  storageClassName: "{{ monitoring_alertmanager_pvc_storage_class }}"
+{% endif %}
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: "{{ monitoring_alertmanager_pvc_size }}"
+{% endif %}
+          service:
+            type: "{{ monitoring_alertmanager_service_type }}"
+{% if monitoring_alertmanager_service_type == 'NodePort' %}
+            nodePort: {{ monitoring_alertmanager_nodeport }}
+{% endif %}
+
+        ## Node Exporter
+        nodeExporter:
+          enabled: {{ monitoring_node_exporter_enabled | lower }}
+
+        ## Kube State Metrics
+        kubeStateMetrics:
+          enabled: {{ monitoring_kube_state_metrics_enabled | lower }}
+
+        ## CRD yönetimi
+        prometheusOperator:
+          admissionWebhooks:
+            patch:
+              enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ monitoring_namespace }}
+{% if monitoring_argocd_sync_policy == 'automated' %}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - Replace=true
+{% else %}
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+{% endif %}

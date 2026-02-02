@@ -134,3 +134,33 @@ dependencies:
       - inventory_hostname == groups['kube_control_plane'][0]
     tags:
       - node_feature_discovery
+
+  - role: kubernetes-apps/vault
+    when:
+      - inventory_hostname == groups['kube_control_plane'][0]
+    tags:
+      - vault
+
+  - role: kubernetes-apps/postgresql
+    when:
+      - inventory_hostname == groups['kube_control_plane'][0]
+    tags:
+      - postgresql
+
+  - role: kubernetes-apps/pgadmin
+    when:
+      - inventory_hostname == groups['kube_control_plane'][0]
+    tags:
+      - pgadmin
+
+  - role: kubernetes-apps/monitoring
+    when:
+      - inventory_hostname == groups['kube_control_plane'][0]
+    tags:
+      - monitoring
+
+  - role: kubernetes-apps/rancher
+    when:
+      - inventory_hostname == groups['kube_control_plane'][0]
+    tags:
+      - rancher

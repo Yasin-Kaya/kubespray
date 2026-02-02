@@ -1,0 +1,16 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ monitoring_argocd_project }}
+  namespace: {{ monitoring_argocd_namespace }}
+spec:
+  description: "Monitoring Stack (Prometheus + Grafana)"
+  sourceRepos:
+    - "{{ monitoring_helm_repo_url }}"
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

@@ -1,0 +1,40 @@
+---
+pgadmin_enabled: false
+pgadmin_namespace: pgadmin
+pgadmin_version: "1.57.0"
+pgadmin_helm_repo_name: runix
+pgadmin_helm_repo_url: "https://helm.runix.net"
+pgadmin_helm_release_name: pgadmin4
+
+# Login
+pgadmin_email: "admin@local.dev"
+pgadmin_password: "admin"
+
+# PVC
+pgadmin_pvc_enabled: true
+pgadmin_pvc_size: "2Gi"
+pgadmin_pvc_storage_class: ""
+
+# Service type: ClusterIP, NodePort, LoadBalancer
+pgadmin_service_type: "ClusterIP"
+pgadmin_service_port: 80
+pgadmin_nodeport: 30080
+
+# Ingress
+pgadmin_ingress_enabled: false
+pgadmin_ingress_host: "pgadmin.local"
+pgadmin_ingress_class: "nginx"
+pgadmin_ingress_tls_enabled: false
+pgadmin_ingress_tls_secret: "pgadmin-tls"
+
+# PostgreSQL otomatik bağlantı tanımı
+pgadmin_server_definitions_enabled: false
+pgadmin_server_host: "postgresql.postgresql.svc.cluster.local"
+pgadmin_server_port: 5432
+pgadmin_server_db: "appdb"
+pgadmin_server_username: "postgres"
+
+# ArgoCD
+pgadmin_argocd_namespace: "argocd"
+pgadmin_argocd_project: "pgadmin"
+pgadmin_argocd_sync_policy: "automated"

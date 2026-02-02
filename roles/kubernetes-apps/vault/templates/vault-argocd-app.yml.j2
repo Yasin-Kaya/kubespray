@@ -1,0 +1,62 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+  namespace: {{ vault_argocd_namespace }}
+spec:
+  project: {{ vault_argocd_project }}
+  source:
+    repoURL: "{{ vault_helm_repo_url }}"
+    chart: vault
+    targetRevision: "{{ vault_version }}"
+    helm:
+      values: |
+        server:
+          dev:
+            enabled: {{ vault_server_dev_enabled | lower }}
+          dataStorage:
+            enabled: {{ vault_pvc_enabled | lower }}
+            size: "{{ vault_pvc_size }}"
+{% if vault_pvc_storage_class %}
+            storageClass: "{{ vault_pvc_storage_class }}"
+{% endif %}
+          service:
+            type: "{{ vault_service_type }}"
+{% if vault_service_type == 'NodePort' %}
+            nodePort: {{ vault_nodeport_server }}
+{% endif %}
+{% if vault_ingress_enabled %}
+          ingress:
+            enabled: true
+            ingressClassName: "{{ vault_ingress_class }}"
+            hosts:
+              - host: "{{ vault_ingress_host }}"
+{% if vault_ingress_tls_enabled %}
+            tls:
+              - secretName: "{{ vault_ingress_tls_secret }}"
+                hosts:
+                  - "{{ vault_ingress_host }}"
+{% endif %}
+{% endif %}
+        ui:
+          enabled: {{ vault_ui_enabled | lower }}
+          serviceType: "{{ vault_service_type }}"
+{% if vault_service_type == 'NodePort' %}
+          serviceNodePort: {{ vault_nodeport_ui }}
+{% endif %}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ vault_namespace }}
+{% if vault_argocd_sync_policy == 'automated' %}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{% else %}
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+{% endif %}

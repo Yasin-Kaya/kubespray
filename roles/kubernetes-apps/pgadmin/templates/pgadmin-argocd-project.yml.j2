@@ -1,0 +1,18 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ pgadmin_argocd_project }}
+  namespace: {{ pgadmin_argocd_namespace }}
+spec:
+  description: "pgAdmin4 Project"
+  sourceRepos:
+    - "{{ pgadmin_helm_repo_url }}"
+  destinations:
+    - namespace: {{ pgadmin_namespace }}
+      server: https://kubernetes.default.svc
+    - namespace: {{ pgadmin_argocd_namespace }}
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

@@ -1,0 +1,102 @@
+---
+# ========================
+# VAULT KALDIRMA (vault_enabled: false)
+# ========================
+- name: Vault | Remove ArgoCD Application
+  command: "{{ bin_dir }}/kubectl delete application vault -n {{ vault_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Vault | Remove ArgoCD AppProject
+  command: "{{ bin_dir }}/kubectl delete appproject {{ vault_argocd_project }} -n {{ vault_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Vault | Remove namespace
+  command: "{{ bin_dir }}/kubectl delete namespace {{ vault_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+# ========================
+# VAULT KURULUM - ArgoCD Application
+# ========================
+- name: Vault | Create namespace
+  become: true
+  template:
+    src: "vault-namespace.yml.j2"
+    dest: "{{ kube_config_dir }}/vault-namespace.yml"
+    mode: "0644"
+  when:
+    - vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Vault | Apply namespace
+  become: true
+  kube:
+    name: Vault
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/vault-namespace.yml"
+    state: latest
+  when:
+    - vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Vault | Create ArgoCD AppProject
+  become: true
+  template:
+    src: "vault-argocd-project.yml.j2"
+    dest: "{{ kube_config_dir }}/vault-argocd-project.yml"
+    mode: "0644"
+  when:
+    - vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Vault | Apply ArgoCD AppProject
+  become: true
+  kube:
+    name: Vault AppProject
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/vault-argocd-project.yml"
+    state: latest
+  when:
+    - vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Vault | Create ArgoCD Application
+  become: true
+  template:
+    src: "vault-argocd-app.yml.j2"
+    dest: "{{ kube_config_dir }}/vault-argocd-app.yml"
+    mode: "0644"
+  when:
+    - vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Vault | Apply ArgoCD Application
+  become: true
+  kube:
+    name: Vault Application
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/vault-argocd-app.yml"
+    state: latest
+  when:
+    - vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+
+- name: Vault | Wait for ArgoCD to sync Vault
+  command: "{{ bin_dir }}/kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application vault -n {{ vault_argocd_namespace }} --timeout=5m"
+  become: true
+  when:
+    - vault_enabled
+    - vault_argocd_sync_policy == 'automated'
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
