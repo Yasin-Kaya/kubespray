@@ -1,32 +1,5 @@
 ---
 # ========================
-# VAULT KALDIRMA (vault_enabled: false)
-# ========================
-- name: Vault | Remove ArgoCD Application
-  command: "{{ bin_dir }}/kubectl delete application vault -n {{ vault_argocd_namespace }} --ignore-not-found"
-  become: true
-  when:
-    - not vault_enabled
-    - inventory_hostname == groups['kube_control_plane'][0]
-  ignore_errors: true
-
-- name: Vault | Remove ArgoCD AppProject
-  command: "{{ bin_dir }}/kubectl delete appproject {{ vault_argocd_project }} -n {{ vault_argocd_namespace }} --ignore-not-found"
-  become: true
-  when:
-    - not vault_enabled
-    - inventory_hostname == groups['kube_control_plane'][0]
-  ignore_errors: true
-
-- name: Vault | Remove namespace
-  command: "{{ bin_dir }}/kubectl delete namespace {{ vault_namespace }} --ignore-not-found"
-  become: true
-  when:
-    - not vault_enabled
-    - inventory_hostname == groups['kube_control_plane'][0]
-  ignore_errors: true
-
-# ========================
 # VAULT KURULUM - ArgoCD Application
 # ========================
 - name: Vault | Create namespace
@@ -98,5 +71,32 @@
   when:
     - vault_enabled
     - vault_argocd_sync_policy == 'automated'
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+# ========================
+# VAULT KALDIRMA (vault_enabled: false)
+# ========================
+- name: Vault | Remove ArgoCD Application
+  command: "{{ bin_dir }}/kubectl delete application vault -n {{ vault_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Vault | Remove ArgoCD AppProject
+  command: "{{ bin_dir }}/kubectl delete appproject {{ vault_argocd_project }} -n {{ vault_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not vault_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: Vault | Remove namespace
+  command: "{{ bin_dir }}/kubectl delete namespace {{ vault_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not vault_enabled
     - inventory_hostname == groups['kube_control_plane'][0]
   ignore_errors: true

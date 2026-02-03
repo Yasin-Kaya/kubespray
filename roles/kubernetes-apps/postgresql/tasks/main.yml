@@ -1,32 +1,5 @@
 ---
 # ========================
-# POSTGRESQL KALDIRMA (postgresql_enabled: false)
-# ========================
-- name: PostgreSQL | Remove ArgoCD Application
-  command: "{{ bin_dir }}/kubectl delete application postgresql -n {{ postgresql_argocd_namespace }} --ignore-not-found"
-  become: true
-  when:
-    - not postgresql_enabled
-    - inventory_hostname == groups['kube_control_plane'][0]
-  ignore_errors: true
-
-- name: PostgreSQL | Remove ArgoCD AppProject
-  command: "{{ bin_dir }}/kubectl delete appproject {{ postgresql_argocd_project }} -n {{ postgresql_argocd_namespace }} --ignore-not-found"
-  become: true
-  when:
-    - not postgresql_enabled
-    - inventory_hostname == groups['kube_control_plane'][0]
-  ignore_errors: true
-
-- name: PostgreSQL | Remove namespace
-  command: "{{ bin_dir }}/kubectl delete namespace {{ postgresql_namespace }} --ignore-not-found"
-  become: true
-  when:
-    - not postgresql_enabled
-    - inventory_hostname == groups['kube_control_plane'][0]
-  ignore_errors: true
-
-# ========================
 # POSTGRESQL KURULUM - ArgoCD Application
 # ========================
 - name: PostgreSQL | Create namespace
@@ -98,5 +71,32 @@
   when:
     - postgresql_enabled
     - postgresql_argocd_sync_policy == 'automated'
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+# ========================
+# POSTGRESQL KALDIRMA (postgresql_enabled: false)
+# ========================
+- name: PostgreSQL | Remove ArgoCD Application
+  command: "{{ bin_dir }}/kubectl delete application postgresql -n {{ postgresql_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not postgresql_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: PostgreSQL | Remove ArgoCD AppProject
+  command: "{{ bin_dir }}/kubectl delete appproject {{ postgresql_argocd_project }} -n {{ postgresql_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not postgresql_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: PostgreSQL | Remove namespace
+  command: "{{ bin_dir }}/kubectl delete namespace {{ postgresql_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not postgresql_enabled
     - inventory_hostname == groups['kube_control_plane'][0]
   ignore_errors: true

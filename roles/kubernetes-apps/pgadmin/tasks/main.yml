@@ -1,32 +1,5 @@
 ---
 # ========================
-# PGADMIN KALDIRMA (pgadmin_enabled: false)
-# ========================
-- name: pgAdmin | Remove ArgoCD Application
-  command: "{{ bin_dir }}/kubectl delete application pgadmin -n {{ pgadmin_argocd_namespace }} --ignore-not-found"
-  become: true
-  when:
-    - not pgadmin_enabled
-    - inventory_hostname == groups['kube_control_plane'][0]
-  ignore_errors: true
-
-- name: pgAdmin | Remove ArgoCD AppProject
-  command: "{{ bin_dir }}/kubectl delete appproject {{ pgadmin_argocd_project }} -n {{ pgadmin_argocd_namespace }} --ignore-not-found"
-  become: true
-  when:
-    - not pgadmin_enabled
-    - inventory_hostname == groups['kube_control_plane'][0]
-  ignore_errors: true
-
-- name: pgAdmin | Remove namespace
-  command: "{{ bin_dir }}/kubectl delete namespace {{ pgadmin_namespace }} --ignore-not-found"
-  become: true
-  when:
-    - not pgadmin_enabled
-    - inventory_hostname == groups['kube_control_plane'][0]
-  ignore_errors: true
-
-# ========================
 # PGADMIN KURULUM - ArgoCD Application
 # ========================
 - name: pgAdmin | Create namespace
@@ -100,3 +73,32 @@
     - pgadmin_argocd_sync_policy == 'automated'
     - inventory_hostname == groups['kube_control_plane'][0]
   ignore_errors: true
+
+# ========================
+# PGADMIN KALDIRMA (pgadmin_enabled: false)
+# ========================
+- name: pgAdmin | Remove ArgoCD Application
+  command: "{{ bin_dir }}/kubectl delete application pgadmin -n {{ pgadmin_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not pgadmin_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: pgAdmin | Remove ArgoCD AppProject
+  command: "{{ bin_dir }}/kubectl delete appproject {{ pgadmin_argocd_project }} -n {{ pgadmin_argocd_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not pgadmin_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+- name: pgAdmin | Remove namespace
+  command: "{{ bin_dir }}/kubectl delete namespace {{ pgadmin_namespace }} --ignore-not-found"
+  become: true
+  when:
+    - not pgadmin_enabled
+    - inventory_hostname == groups['kube_control_plane'][0]
+  ignore_errors: true
+
+
