@@ -96,3 +96,57 @@
   when:
     - argocd_admin_password is defined
     - "inventory_hostname == groups['kube_control_plane'][0]"
+
+# Service type patch (NodePort/LoadBalancer)
+- name: Kubernetes Apps | Create ArgoCD server service patch
+  become: true
+  template:
+    src: "argocd-server-service-patch.yml.j2"
+    dest: "{{ kube_config_dir }}/argocd-server-service-patch.yml"
+    mode: "0644"
+  when:
+    - argocd_service_type != 'ClusterIP'
+    - "inventory_hostname == groups['kube_control_plane'][0]"
+
+- name: Kubernetes Apps | Apply ArgoCD server service patch
+  become: true
+  kube:
+    name: ArgoCD Server Service Patch
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/argocd-server-service-patch.yml"
+    state: latest
+  when:
+    - argocd_service_type != 'ClusterIP'
+    - "inventory_hostname == groups['kube_control_plane'][0]"
+
+# Insecure mode patch (for ingress TLS termination)
+- name: Kubernetes Apps | Patch ArgoCD server for insecure mode
+  become: true
+  command: |
+    {{ bin_dir }}/kubectl -n {{ argocd_namespace }} patch deployment argocd-server --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
+  when:
+    - argocd_server_insecure
+    - "inventory_hostname == groups['kube_control_plane'][0]"
+  ignore_errors: true
+
+# Ingress
+- name: Kubernetes Apps | Create ArgoCD ingress
+  become: true
+  template:
+    src: "argocd-ingress.yml.j2"
+    dest: "{{ kube_config_dir }}/argocd-ingress.yml"
+    mode: "0644"
+  when:
+    - argocd_ingress_enabled
+    - "inventory_hostname == groups['kube_control_plane'][0]"
+
+- name: Kubernetes Apps | Apply ArgoCD ingress
+  become: true
+  kube:
+    name: ArgoCD Ingress
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/argocd-ingress.yml"
+    state: latest
+  when:
+    - argocd_ingress_enabled
+    - "inventory_hostname == groups['kube_control_plane'][0]"

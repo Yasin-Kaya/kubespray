@@ -3,3 +3,18 @@ argocd_enabled: false
 argocd_version: 2.14.5
 argocd_namespace: argocd
 # argocd_admin_password:
+
+# Service type: ClusterIP, NodePort, LoadBalancer
+argocd_service_type: "ClusterIP"
+argocd_nodeport_http: 30080
+argocd_nodeport_https: 30443
+
+# Ingress
+argocd_ingress_enabled: false
+argocd_ingress_host: "argocd.local"
+argocd_ingress_class: "nginx"
+argocd_ingress_tls_enabled: false
+argocd_ingress_tls_secret: "argocd-tls"
+
+# Insecure mode (disable TLS on argocd-server, useful when TLS is terminated at ingress)
+argocd_server_insecure: false

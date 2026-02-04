@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-server
+  namespace: {{ argocd_namespace }}
+spec:
+  type: {{ argocd_service_type }}
+{% if argocd_service_type == 'NodePort' %}
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+      nodePort: {{ argocd_nodeport_http }}
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 8080
+      nodePort: {{ argocd_nodeport_https }}
+{% endif %}
